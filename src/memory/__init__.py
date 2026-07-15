@@ -1,0 +1,3 @@
+"""
+Memory storage module initialization.
+"""
