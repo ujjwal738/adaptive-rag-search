@@ -48,9 +48,19 @@ def query_classifier(state: State):
 
 # Placeholder/Mock nodes for features to be implemented in subsequent phases
 def general_llm(state: State):
-    """Placeholder for general LLM node."""
-    print("Placeholder: general_llm node")
-    return {"messages": state["messages"] + [AIMessage(content="General LLM placeholder response")]}
+    """
+    Fetch general common knowledge result from the LLM.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated messages from LLM.
+    """
+    result = llm.invoke(state["messages"])
+    print("inside general llm")
+    print(result)
+    return {"messages": result}
 
 
 def retriever_node(state: State):
