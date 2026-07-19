@@ -24,3 +24,8 @@ Adaptive RAG Search is an intelligent Retrieval-Augmented Generation (RAG) syste
 - Developed description enhancement module in `src/tools/common_tools.py` using LLM prompts.
 - Configured local FAISS vector database store and helper retriever tool builder in `src/rag/retriever_setup.py`.
 - Replaced the mock document uploading pipeline in `src/rag/document_upload.py` to perform text/PDF loading, description enhancement, chunking, and FAISS vector storage.
+
+### Phase 2: Query Routing Node (`feat/2-query-routing`)
+- Created Pydantic models for structured output: `RouteIdentifier` (`src/models/route_identifier.py`) and `VerificationResult` (`src/models/verification_result.py`).
+- Configured LangGraph conditional routing paths in `src/tools/graph_tools.py` (e.g. `routing_tool`, `doc_tool`, and `verify_answer`).
+- Replaced the mock graph builder in `src/rag/graph_builder.py` with a completed `StateGraph` containing a fully functional `query_classifier` node to analyze context and route queries to `index`, `general`, or `search`.
