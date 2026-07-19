@@ -29,3 +29,6 @@ Adaptive RAG Search is an intelligent Retrieval-Augmented Generation (RAG) syste
 - Created Pydantic models for structured output: `RouteIdentifier` (`src/models/route_identifier.py`) and `VerificationResult` (`src/models/verification_result.py`).
 - Configured LangGraph conditional routing paths in `src/tools/graph_tools.py` (e.g. `routing_tool`, `doc_tool`, and `verify_answer`).
 - Replaced the mock graph builder in `src/rag/graph_builder.py` with a completed `StateGraph` containing a fully functional `query_classifier` node to analyze context and route queries to `index`, `general`, or `search`.
+
+### Phase 3: General Chit-Chat Response Generator (`feat/3-general-chit-chat`)
+- Implemented the `general_llm` node inside `src/rag/graph_builder.py` to handle general chit-chat and common knowledge questions by directly invoking the OpenAI Chat LLM, avoiding database lookups for generic queries.
