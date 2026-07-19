@@ -15,3 +15,12 @@ Adaptive RAG Search is an intelligent Retrieval-Augmented Generation (RAG) syste
 4. Copy `.env.example` to `.env` and fill in API keys.
 5. Run the FastAPI backend: `uvicorn src.main:app --reload`.
 6. Run the Streamlit app: `streamlit run streamlit_app/home.py`.
+
+## Software Development Phases
+
+### Phase 1: Vector Store Setup & Document Uploading (`feat/1-vector-db-setup`)
+- Initialized local Python virtual environment and installed core dependencies (LangChain, LangGraph, Streamlit, FAISS, OpenAI).
+- Created an OpenAI chat LLM integration client in `src/llms/openai.py`.
+- Developed description enhancement module in `src/tools/common_tools.py` using LLM prompts.
+- Configured local FAISS vector database store and helper retriever tool builder in `src/rag/retriever_setup.py`.
+- Replaced the mock document uploading pipeline in `src/rag/document_upload.py` to perform text/PDF loading, description enhancement, chunking, and FAISS vector storage.
