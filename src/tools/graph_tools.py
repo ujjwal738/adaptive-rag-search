@@ -64,7 +64,7 @@ def verify_answer(state: State) -> Literal["__end__", "generate"]:
         return "__end__"
 
     question = state["latest_query"]
-    context = state["messages"][-1].content
+    context = state["messages"][-2].content if len(state["messages"]) >= 2 else ""
     final_answer = state["messages"][-1].content
 
     verify_prompt = PromptTemplate(

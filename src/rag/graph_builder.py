@@ -14,7 +14,7 @@ from src.llms.openai import llm
 from src.models.route_identifier import RouteIdentifier
 from src.models.grade_result import GradeResult
 from src.models.state import State
-from src.tools.graph_tools import routing_tool, doc_tool
+from src.tools.graph_tools import routing_tool, doc_tool, verify_answer
 
 config = Config()
 
@@ -218,7 +218,7 @@ graph.add_edge("retriever", "grade")
 graph.add_edge("rewrite", "retriever")
 graph.add_conditional_edges("query_analysis", routing_tool)
 graph.add_conditional_edges("grade", doc_tool)
-graph.add_edge("generate", END)
+graph.add_conditional_edges("generate", verify_answer)
 graph.add_edge("general_llm", END)
 
 builder = graph.compile()
