@@ -8,6 +8,7 @@ from langgraph.constants import START, END
 from langgraph.graph.state import StateGraph
 
 from src.rag.retriever_setup import get_retriever
+from src.rag.reAct_agent import agent_executor
 from src.config.settings import Config
 from src.llms.openai import llm
 from src.models.route_identifier import RouteIdentifier
@@ -64,9 +65,36 @@ def general_llm(state: State):
 
 
 def retriever_node(state: State):
-    """Placeholder for retriever node."""
-    print("Placeholder: retriever_node node")
-    return {"messages": state["messages"] + [AIMessage(content="Retriever node placeholder response")]}
+    """
+    Retrieve results from vector stores using the reAct agent.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated messages with tool calls.
+    """
+    messages = state["latest_query"]
+    result = agent_executor.invoke({"input": messages})
+
+    # Extract tool calls
+    intermediate_steps = result.get("intermediate_steps", [])
+    tool_calls = []
+    if intermediate_steps:
+        for action, tool_result in intermediate_steps:
+            tool_calls.append({
+                "tool": action.tool,
+                "input": action.tool_input,
+            })
+
+    new_message = AIMessage(
+        content=result["output"],
+        additional_kwargs={"tool_calls": tool_calls},
+    )
+
+    return {
+        "messages": [new_message]
+    }
 
 
 def grade(state: State):

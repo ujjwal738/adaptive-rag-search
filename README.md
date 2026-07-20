@@ -32,3 +32,7 @@ Adaptive RAG Search is an intelligent Retrieval-Augmented Generation (RAG) syste
 
 ### Phase 3: General Chit-Chat Response Generator (`feat/3-general-chit-chat`)
 - Implemented the `general_llm` node inside `src/rag/graph_builder.py` to handle general chit-chat and common knowledge questions by directly invoking the OpenAI Chat LLM, avoiding database lookups for generic queries.
+
+### Phase 4: Document Retrieval Node (`feat/4-document-retrieval`)
+- Configured a local ReAct agent and executor inside `src/rag/reAct_agent.py` to coordinate tools for document retrieval.
+- Implemented the `retriever_node` in `src/rag/graph_builder.py` which executes the ReAct executor to find information within the vector store, package intermediate tool calls, and append retrieved results as messages.
