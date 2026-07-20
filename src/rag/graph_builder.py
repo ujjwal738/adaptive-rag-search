@@ -147,9 +147,25 @@ def rewrite_query(state: State):
 
 
 def generate(state: State):
-    """Placeholder for generation node."""
-    print("Placeholder: generate node")
-    return {"messages": state["messages"] + [AIMessage(content="Generate node placeholder response")]}
+    """
+    Generate final response based on the retrieved context or agent response.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated messages with the generated answer.
+    """
+    context = state["messages"][-1].content
+    generate_prompt = PromptTemplate(
+        template=config.prompt("generate_prompt"),
+        input_variables=["context"]
+    )
+    chain = generate_prompt | llm
+    result = chain.invoke({"context": context})
+    print("Generated response:", result.content)
+
+    return {"messages": [AIMessage(content=result.content)]}
 
 
 def web_search(state: State):
