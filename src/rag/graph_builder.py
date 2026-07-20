@@ -8,11 +8,13 @@ from langgraph.constants import START, END
 from langgraph.graph.state import StateGraph
 
 from src.rag.retriever_setup import get_retriever
+from src.rag.reAct_agent import agent_executor
 from src.config.settings import Config
 from src.llms.openai import llm
 from src.models.route_identifier import RouteIdentifier
+from src.models.grade_result import GradeResult
 from src.models.state import State
-from src.tools.graph_tools import routing_tool, doc_tool
+from src.tools.graph_tools import routing_tool, doc_tool, verify_answer
 
 config = Config()
 
@@ -64,33 +66,139 @@ def general_llm(state: State):
 
 
 def retriever_node(state: State):
-    """Placeholder for retriever node."""
-    print("Placeholder: retriever_node node")
-    return {"messages": state["messages"] + [AIMessage(content="Retriever node placeholder response")]}
+    """
+    Retrieve results from vector stores using the reAct agent.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated messages with tool calls.
+    """
+    messages = state["latest_query"]
+    result = agent_executor.invoke({"input": messages})
+
+    # Extract tool calls
+    intermediate_steps = result.get("intermediate_steps", [])
+    tool_calls = []
+    if intermediate_steps:
+        for action, tool_result in intermediate_steps:
+            tool_calls.append({
+                "tool": action.tool,
+                "input": action.tool_input,
+            })
+
+    new_message = AIMessage(
+        content=result["output"],
+        additional_kwargs={"tool_calls": tool_calls},
+    )
+
+    return {
+        "messages": [new_message]
+    }
 
 
 def grade(state: State):
-    """Placeholder for grading node."""
-    print("Placeholder: grade node")
-    return {"messages": state["messages"], "binary_score": "yes"}
+    """
+    Grade the retrieved documents for relevance to the user question.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated binary_score in the state.
+    """
+    question = state["latest_query"]
+    context = state["messages"][-1].content
+
+    llm_with_structured_output = llm.with_structured_output(GradeResult)
+    grade_prompt = PromptTemplate(
+        template=config.prompt("grading_prompt"),
+        input_variables=["question", "context"]
+    )
+    chain = grade_prompt | llm_with_structured_output
+    result = chain.invoke({"question": question, "context": context})
+    print("Grade score:", result.binary_score)
+
+    return {"binary_score": result.binary_score}
 
 
 def rewrite_query(state: State):
-    """Placeholder for query rewriting node."""
-    print("Placeholder: rewrite_query node")
-    return {"latest_query": state["latest_query"]}
+    """
+    Rewrite the user query to optimize retrieval relevance.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated latest_query in the state.
+    """
+    query = state["latest_query"]
+    rewrite_prompt = PromptTemplate(
+        template=config.prompt("rewrite_prompt"),
+        input_variables=["query"]
+    )
+    chain = rewrite_prompt | llm
+    result = chain.invoke({"query": query})
+    rewritten = result.content.strip()
+    print("Rewritten query:", rewritten)
+
+    return {"latest_query": rewritten}
 
 
 def generate(state: State):
-    """Placeholder for generation node."""
-    print("Placeholder: generate node")
-    return {"messages": state["messages"] + [AIMessage(content="Generate node placeholder response")]}
+    """
+    Generate final response based on the retrieved context or agent response.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated messages with the generated answer.
+    """
+    context = state["messages"][-1].content
+    generate_prompt = PromptTemplate(
+        template=config.prompt("generate_prompt"),
+        input_variables=["context"]
+    )
+    chain = generate_prompt | llm
+    result = chain.invoke({"context": context})
+    print("Generated response:", result.content)
+
+    return {"messages": [AIMessage(content=result.content)]}
 
 
 def web_search(state: State):
-    """Placeholder for web search node."""
-    print("Placeholder: web_search node")
-    return {"messages": state["messages"] + [AIMessage(content="Web search node placeholder response")]}
+    """
+    Search the web for information using Tavily API.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated messages in state.
+    """
+    query = state["latest_query"]
+    print("Searching the web for:", query)
+    
+    try:
+        from langchain_community.tools.tavily_search import TavilySearchResults
+        web_search_tool = TavilySearchResults(max_results=3)
+        results = web_search_tool.invoke(query)
+        
+        if isinstance(results, str):
+            context_str = results
+        else:
+            context_str = "\n\n".join([
+                f"URL: {res.get('url', '')}\nContent: {res.get('content', '')}"
+                for res in results
+            ])
+    except Exception as e:
+        print("Tavily search error, using fallback empty context:", e)
+        context_str = f"No web search results found for: {query}"
+
+    new_message = AIMessage(content=context_str)
+    return {"messages": [new_message]}
 
 
 # Build the graph structure
@@ -110,7 +218,7 @@ graph.add_edge("retriever", "grade")
 graph.add_edge("rewrite", "retriever")
 graph.add_conditional_edges("query_analysis", routing_tool)
 graph.add_conditional_edges("grade", doc_tool)
-graph.add_edge("generate", END)
+graph.add_conditional_edges("generate", verify_answer)
 graph.add_edge("general_llm", END)
 
 builder = graph.compile()
