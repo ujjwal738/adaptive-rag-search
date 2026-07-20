@@ -153,9 +153,36 @@ def generate(state: State):
 
 
 def web_search(state: State):
-    """Placeholder for web search node."""
-    print("Placeholder: web_search node")
-    return {"messages": state["messages"] + [AIMessage(content="Web search node placeholder response")]}
+    """
+    Search the web for information using Tavily API.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated messages in state.
+    """
+    query = state["latest_query"]
+    print("Searching the web for:", query)
+    
+    try:
+        from langchain_community.tools.tavily_search import TavilySearchResults
+        web_search_tool = TavilySearchResults(max_results=3)
+        results = web_search_tool.invoke(query)
+        
+        if isinstance(results, str):
+            context_str = results
+        else:
+            context_str = "\n\n".join([
+                f"URL: {res.get('url', '')}\nContent: {res.get('content', '')}"
+                for res in results
+            ])
+    except Exception as e:
+        print("Tavily search error, using fallback empty context:", e)
+        context_str = f"No web search results found for: {query}"
+
+    new_message = AIMessage(content=context_str)
+    return {"messages": [new_message]}
 
 
 # Build the graph structure
