@@ -12,6 +12,7 @@ from src.rag.reAct_agent import agent_executor
 from src.config.settings import Config
 from src.llms.openai import llm
 from src.models.route_identifier import RouteIdentifier
+from src.models.grade_result import GradeResult
 from src.models.state import State
 from src.tools.graph_tools import routing_tool, doc_tool
 
@@ -98,9 +99,28 @@ def retriever_node(state: State):
 
 
 def grade(state: State):
-    """Placeholder for grading node."""
-    print("Placeholder: grade node")
-    return {"messages": state["messages"], "binary_score": "yes"}
+    """
+    Grade the retrieved documents for relevance to the user question.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated binary_score in the state.
+    """
+    question = state["latest_query"]
+    context = state["messages"][-1].content
+
+    llm_with_structured_output = llm.with_structured_output(GradeResult)
+    grade_prompt = PromptTemplate(
+        template=config.prompt("grading_prompt"),
+        input_variables=["question", "context"]
+    )
+    chain = grade_prompt | llm_with_structured_output
+    result = chain.invoke({"question": question, "context": context})
+    print("Grade score:", result.binary_score)
+
+    return {"binary_score": result.binary_score}
 
 
 def rewrite_query(state: State):
