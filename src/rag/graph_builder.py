@@ -124,9 +124,26 @@ def grade(state: State):
 
 
 def rewrite_query(state: State):
-    """Placeholder for query rewriting node."""
-    print("Placeholder: rewrite_query node")
-    return {"latest_query": state["latest_query"]}
+    """
+    Rewrite the user query to optimize retrieval relevance.
+
+    Args:
+        state (State): The current state of the graph.
+
+    Returns:
+        dict: Updated latest_query in the state.
+    """
+    query = state["latest_query"]
+    rewrite_prompt = PromptTemplate(
+        template=config.prompt("rewrite_prompt"),
+        input_variables=["query"]
+    )
+    chain = rewrite_prompt | llm
+    result = chain.invoke({"query": query})
+    rewritten = result.content.strip()
+    print("Rewritten query:", rewritten)
+
+    return {"latest_query": rewritten}
 
 
 def generate(state: State):
