@@ -1,6 +1,14 @@
+import os
+os.environ["OPENAI_API_KEY"] = "mock-key"
+os.environ["TAVILY_API_KEY"] = "mock-key"
+
+# Mock OpenAIEmbeddings methods globally before other imports to prevent OpenAI API calls for FAISS
+from langchain_openai import OpenAIEmbeddings
+OpenAIEmbeddings.embed_documents = lambda self, texts: [[0.1] * 1536] * len(texts)
+OpenAIEmbeddings.embed_query = lambda self, text: [0.1] * 1536
+
 import unittest
 from unittest.mock import MagicMock, patch
-import os
 import sys
 
 # Ensure src is in the path
