@@ -36,3 +36,10 @@ Adaptive RAG Search is an intelligent Retrieval-Augmented Generation (RAG) syste
 ### Phase 4: Document Retrieval Node (`feat/4-document-retrieval`)
 - Configured a local ReAct agent and executor inside `src/rag/reAct_agent.py` to coordinate tools for document retrieval.
 - Implemented the `retriever_node` in `src/rag/graph_builder.py` which executes the ReAct executor to find information within the vector store, package intermediate tool calls, and append retrieved results as messages.
+
+### Phase 5: Response Feedback & RAG Performance Analytics
+- Created `FeedbackRequest` and `FeedbackStatsResponse` Pydantic models in `src/models/feedback_request.py`.
+- Developed thread-safe `FeedbackStore` in `src/memory/feedback_store.py` to collect user ratings, compute average scores, and break down feedback metrics by routing path (`index`, `general`, `search`).
+- Added REST API endpoints (`/rag/feedback`, `/rag/feedback/stats`, `/rag/history/{session_id}`) in `src/api/routes.py`.
+- Built interactive Streamlit rating widgets for chat messages and a live Performance Analytics dashboard in `streamlit_app/home.py`.
+
