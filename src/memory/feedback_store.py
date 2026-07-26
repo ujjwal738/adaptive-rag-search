@@ -2,7 +2,7 @@
 Thread-safe memory store for RAG feedback ratings and aggregate analytics.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 import threading
 import uuid
 from typing import List, Dict, Any
@@ -36,7 +36,7 @@ class FeedbackStore:
             rating=req.rating,
             feedback_text=req.feedback_text,
             route=req.route or "general",
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
         with self._store_lock:
             self._feedback_records.append(item)
