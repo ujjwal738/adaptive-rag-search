@@ -33,6 +33,7 @@ class TestRAGGraphNodes(unittest.TestCase):
         
         # Mock LLM structured output
         mock_llm_structured = MagicMock()
+        mock_llm_structured.return_value = RouteIdentifier(route="index")
         mock_llm_structured.invoke.return_value = RouteIdentifier(route="index")
         mock_llm.with_structured_output.return_value = mock_llm_structured
         
@@ -46,6 +47,7 @@ class TestRAGGraphNodes(unittest.TestCase):
     def test_general_llm(self, mock_llm):
         from src.rag.graph_builder import general_llm
         
+        mock_llm.return_value = AIMessage(content="General response")
         mock_llm.invoke.return_value = AIMessage(content="General response")
         
         state = {"messages": [HumanMessage(content="What is 2+2?")]}
@@ -58,6 +60,7 @@ class TestRAGGraphNodes(unittest.TestCase):
         from src.rag.graph_builder import grade
         
         mock_llm_structured = MagicMock()
+        mock_llm_structured.return_value = GradeResult(binary_score="yes")
         mock_llm_structured.invoke.return_value = GradeResult(binary_score="yes")
         mock_llm.with_structured_output.return_value = mock_llm_structured
         
@@ -72,6 +75,7 @@ class TestRAGGraphNodes(unittest.TestCase):
     def test_rewrite_query(self, mock_llm):
         from src.rag.graph_builder import rewrite_query
         
+        mock_llm.return_value = AIMessage(content="rewritten query")
         mock_llm.invoke.return_value = AIMessage(content="rewritten query")
         
         state = {"latest_query": "original query"}
@@ -82,6 +86,7 @@ class TestRAGGraphNodes(unittest.TestCase):
     def test_generate(self, mock_llm):
         from src.rag.graph_builder import generate
         
+        mock_llm.return_value = AIMessage(content="Generated answer")
         mock_llm.invoke.return_value = AIMessage(content="Generated answer")
         
         state = {"messages": [AIMessage(content="Retrieved context")]}
